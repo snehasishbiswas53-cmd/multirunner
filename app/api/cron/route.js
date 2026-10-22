@@ -1,5 +1,5 @@
 // language: JavaScript (Next.js App Router), file: app/api/cron/route.js
-// Vercel Cron — runs every 2 minutes
+// UptimeRobot HTTP monitor — pings every 5 minutes
 // Watches cele:heartbeat; if stale > 90s, fires the next deploy hook
 // so when the active Render instance crashes, this automatically wakes the next one.
 
@@ -57,10 +57,10 @@ async function logEvent(msg) {
 // ── main handler ──────────────────────────────────────────────────────────────
 
 export async function GET(request) {
-  // ── auth: Vercel sends Authorization: Bearer <CRON_SECRET> for cron routes
+  // ── auth: UptimeRobot sends x-cron-secret header
   if (CRON_SECRET) {
-    const auth = request.headers.get('authorization') || ''
-    if (auth !== `Bearer ${CRON_SECRET}`) {
+    const secret = request.headers.get('x-cron-secret') || ''
+    if (secret !== CRON_SECRET) {
       return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
     }
   }
@@ -101,7 +101,7 @@ export async function GET(request) {
     // ── stale heartbeat detected ──────────────────────────────────────────────
 
     // Guard: don't fire again if we fired in the last 3 minutes
-    // (prevents double-fires if cron overlaps or deploy hook is slow)
+    // (prevents double-fires if monitor overlaps or deploy hook is slow)
     if (lastFiredAge < 180) {
       return NextResponse.json({
         ok:            true,
